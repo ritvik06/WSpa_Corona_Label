@@ -30,9 +30,14 @@ for i in range(len(df_residents)):
         res_info.append(list_house)
 
 #Randomising covid data for houses with probabilistic randomisation
-res_positive = np.random.choice([0, 1], p=[1.-float(sys.argv[1]), float(sys.argv[1])], size=len(res_info))
+# res_positive = np.random.choice([0, 1], p=[1.-float(sys.argv[1]), float(sys.argv[1])], size=len(res_info))
+res_positive = np.zeros(())
 
-print("\nNumber of houses with positive COVID-19 cases are %d\n"% len(np.where(res_positive==1)[0]) )
+num_povhouses = input("Please input number of houses with positive COVID-19 cases currently : ")
+
+
+
+# print("\nNumber of houses with positive COVID-19 cases are %d\n"% len(np.where(res_positive==1)[0]) )
 
 alpha = np.where(res_positive==1)[0]
 
@@ -115,7 +120,6 @@ for key in service_dict.keys():
                     res_points[j]+=50
                     # print(key)  
     
-    #If serviceman went to positive testing house 
     else:
         for i in range(rmax):
             change = 0
@@ -123,14 +127,11 @@ for key in service_dict.keys():
                 if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
                     #If serviceman went to a high risk house, increase points for all houses he went to by 50
                     if(res_positive[j]):
-                        change=100
-                        break
-                    elif(res_points[j]>=100):
                         change=50
                         break
                     #If serviceman went to a semi high risk house, increase points for all houses he went to by 20
-                    elif(res_points[j]<100 and res_points[j]>=50):
-                        change=20
+                    elif(res_points[j]<=100 and res_points[j]>=50):
+                        change= ((res_points[j]-50)//2)
                     
             for j in range(len(res_info)):
                 if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
@@ -204,4 +205,25 @@ for i in range(len(res_info)):
             print("You are in a containment zone, you are not allowed to step outside your house. Please contact the helpline number in the case of any symptoms\n")
 
 
+for i in range(len(res_info)):
+    if (res_positive[i]):
 
+        if (tower==res_info[i][0] and house!=res_info[i][1]):
+            print("10 points contributed by " + str(res_info[i][0]) + "-" + str(res_info[i][1]) + "/n")
+
+
+        inter_points[i][indices] = 10
+        
+        #Assign 100 points to the affected house
+        inter_points[i][i] = 100
+        
+        #Assign 50 points to immediate neighbour
+        neg = [j for j in indices if np.absolute(res_info[j][1]-res_info[i][1])==1.]
+        inter_points[i][neg] = 50
+        
+    else:
+        ages = np.asarray(res_info[i][int((len(res_info[i])/2)+1):-1])
+        ages = ages[~np.isnan(ages)]
+        
+        if (len(np.where(ages>60.))):
+            inter_points[i][i] = 10
