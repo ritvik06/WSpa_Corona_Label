@@ -31,11 +31,21 @@ for i in range(len(df_residents)):
 
 #Randomising covid data for houses with probabilistic randomisation
 # res_positive = np.random.choice([0, 1], p=[1.-float(sys.argv[1]), float(sys.argv[1])], size=len(res_info))
-res_positive = np.zeros(())
+res_positive = np.zeros((len(res_info), ))
 
 num_povhouses = input("Please input number of houses with positive COVID-19 cases currently : ")
 
+if (int(num_povhouses)>0):
+    print("\nEnter house no's with atleast one positive case:\n")
 
+for i in range(int(num_povhouses)):
+    house_no = input(str(i+1) + ". ")
+    arr = house_no.strip().split('-')
+
+    for j in range(len(res_info)):
+        if(res_info[j][0]==arr[0] and res_info[j][1]==float(arr[1])):
+            # print(str(arr[0]) + '-' + str(arr[1 ]))
+            res_positive[j] = 1
 
 # print("\nNumber of houses with positive COVID-19 cases are %d\n"% len(np.where(res_positive==1)[0]) )
 
@@ -52,21 +62,21 @@ inter_points = np.zeros((len(res_info), len(res_info)))
 for i in range(len(res_info)):
     if (res_positive[i]):
         #identify same towers
-        indices = [j for j in range(len(res_info)) if res_info[j][0]==res_info[i][0]]    
-        inter_points[i][indices] = 10
+        # indices = [j for j in range(len(res_info)) if res_info[j][0]==res_info[i][0]]    
+        # inter_points[i][indices] = 10
         
         #Assign 100 points to the affected house
         inter_points[i][i] = 100
         
         #Assign 50 points to immediate neighbour
-        neg = [j for j in indices if np.absolute(res_info[j][1]-res_info[i][1])==1.]
-        inter_points[i][neg] = 50
+        # neg = [j for j in indices if np.absolute(res_info[j][1]-res_info[i][1])==1.]
+        # inter_points[i][neg] = 50
         
     else:
         ages = np.asarray(res_info[i][int((len(res_info[i])/2)+1):-1])
         ages = ages[~np.isnan(ages)]
         
-        if (len(np.where(ages>60.))):
+        if (len(np.where(ages>65.))):
             inter_points[i][i] = 10
 
 #Accumulated points by each household
@@ -82,6 +92,10 @@ service_dict = {}
 for i in range(len(df_service)):
     if (df_service.iloc[i][3] not in service_dict.keys()):
         service_dict[df_service.iloc[i][3]] = []
+        name = df_service.iloc[i,2]
+        service_dict[df_service.iloc[i][3]].append(name)        
+        profession = df_service.iloc[i,5]
+        service_dict[df_service.iloc[i][3]].append(profession)
         
     house_no = df_service.iloc[i,0].strip().split(' - ')
     try:
@@ -91,51 +105,102 @@ for i in range(len(df_service)):
         #Some random thing
         1+2
 
-#Randomise servicemen having 
-service_positive = np.random.choice([0, 1], p=[1. - float(sys.argv[2]), float(sys.argv[2])], size=len(service_dict))
 
-count = 0
+#Randomise servicemen having 
+# service_positive = np.random.choice([0, 1], p=[1. - float(sys.argv[2]), float(sys.argv[2])], size=len(service_dict))
+
+service_positive = {}
 
 for key in service_dict.keys():
-    service_dict[key].append(service_positive[count])
-    count += 1
-    # print(service_dict[key])
+    service_positive[key] = 0
+
+num_service = input("\nPlease input number of servicemen with positive COVID-19 cases currently : ")
+
+if(int(num_service)>0):
+    print("\nEnter id of servicemen who are COVID-19 +ve:\n")
+
+for i in range(int(num_service)):
+    id = input(str(i+1) + ". ")
+
+    for key in service_dict.keys():
+        if(key==int(id)):
+            service_positive[key] = 1
+            break
+
+for key in service_dict.keys():
+    service_dict[key].append(service_positive[key])
 
 #Add 50 points to other houses if servicemen test positive
 #Add 50 points to houses if cases is positive in atleast one house and servicemen are common
 #Add 20 points to houses if serviceman went to house with points>50
 
+
 for key in service_dict.keys():
     
-    rmax = (len(service_dict[key])//2)  
+    rmax = (len(service_dict[key])//2) 
 
-    if (len(service_dict[key])%2):
+    if (not len(service_dict[key])%2):
         rmax-=1
     
     #If serviceman tested positive
     if(service_dict[key][-1]):
         for i in range(rmax):
             for j in range(len(res_info)):
-                if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
-                    res_points[j]+=50
-                    # print(key)  
-    
+                if(service_dict[key][2*i+2]==res_info[j][0] and service_dict[key][2*i+3]==res_info[j][1]):
+                    #If staff is housemaid, servent, cook or driver add 50 points
+                    if(service_dict[key][1]=="Housemaid" or service_dict[key][1]=="Servent" or service_dict[key][1]=="Cook" or service_dict[key][1]=="Driver"):
+                        res_points[j]+=50
+                        print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " is COVID +ve and hence adds 50 points to house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])))
+
+                    else:
+                        res_points[j]+=10 
+                        print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " is COVID +ve and hence adds 10 points to house " + res_info[j][0] + '-' + str(int(res_info[j][1])))
+
+        print()
+
     else:
         for i in range(rmax):
             change = 0
+            bool_house = False
             for j in range(len(res_info)):
-                if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
-                    #If serviceman went to a high risk house, increase points for all houses he went to by 50
-                    if(res_positive[j]):
-                        change=50
-                        break
-                    #If serviceman went to a semi high risk house, increase points for all houses he went to by 20
-                    elif(res_points[j]<=100 and res_points[j]>=50):
-                        change= ((res_points[j]-50)//2)
+                if(service_dict[key][2*i+2]==res_info[j][0] and service_dict[key][2*i+3]==res_info[j][1] and res_positive[j]==1):
+                    bool_house = True
+                    tower = service_dict[key][2*i+2]
+                    house = service_dict[key][2*i+3]
+                    #If serviceman went to a +ve case house, increase points for all houses he went to by 50
+                    if(service_dict[key][1]=="Housemaid" or service_dict[key][1]=="Servent" or service_dict[key][1]=="Cook" or service_dict[key][1]=="Driver"):
+                        change=30
+                        # print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " went to COVID +ve house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])) + " and hence adds 30 points to house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])))
+                    else:
+                        # print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " went to COVID +ve house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])) + " and hence adds 10 points to house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])))
+                        change=10 
+
+                    break
+            
+            if (bool_house):
+                break
+
+        if(bool_house):
+            for i in range(rmax):
+                for j in range(len(res_info)):
+                    if(service_dict[key][2*i+2]==res_info[j][0] and service_dict[key][2*i+3]==res_info[j][1] and res_positive[j]==0):
+                        res_points[j]+=change
+                        if(service_dict[key][1]=="Housemaid" or service_dict[key][1]=="Servent" or service_dict[key][1]=="Cook" or service_dict[key][1]=="Driver"):
+                            print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " went to COVID +ve house " + str(tower) + '-' + str(int(house)) + " and hence adds 30 points to house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])))
+                        else:
+                            print("\n " + service_dict[key][1] + " " + service_dict[key][0] + " ID: " + str(key) + " went to COVID +ve house " + str(tower) + '-' + str(int(house)) + " and hence adds 10 points to house " + str(res_info[j][0]) + '-' + str(int(res_info[j][1])))                  
+
+           
+    
+
+                #If serviceman went to a high risk house, increase points for all houses he went to by 20
+                #FIX LATER
+                # elif(res_points[j]<=100 and res_points[j]>=50):
+                #     change= ((res_points[j]-50)//2)
                     
-            for j in range(len(res_info)):
-                if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
-                    res_points[j]+=change
+            # for j in range(len(res_info)):
+            #     if(service_dict[key][2*i]==res_info[j][0] and service_dict[key][2*i+1]==res_info[j][1]):
+            #         res_points[j]+=change
 
 #Limit points to 100
 res_points = np.clip(res_points,a_min=0,a_max=100.)
@@ -205,25 +270,25 @@ for i in range(len(res_info)):
             print("You are in a containment zone, you are not allowed to step outside your house. Please contact the helpline number in the case of any symptoms\n")
 
 
-for i in range(len(res_info)):
-    if (res_positive[i]):
+# for i in range(len(res_info)):
+#     if (res_positive[i]):
 
-        if (tower==res_info[i][0] and house!=res_info[i][1]):
-            print("10 points contributed by " + str(res_info[i][0]) + "-" + str(res_info[i][1]) + "/n")
+#         if (tower==res_info[i][0] and house!=res_info[i][1]):
+#             print("10 points contributed by " + str(res_info[i][0]) + "-" + str(res_info[i][1]) + "/n")
 
 
-        inter_points[i][indices] = 10
+#         inter_points[i][indices] = 10
         
-        #Assign 100 points to the affected house
-        inter_points[i][i] = 100
+#         #Assign 100 points to the affected house
+#         inter_points[i][i] = 100
         
-        #Assign 50 points to immediate neighbour
-        neg = [j for j in indices if np.absolute(res_info[j][1]-res_info[i][1])==1.]
-        inter_points[i][neg] = 50
+#         #Assign 50 points to immediate neighbour
+#         neg = [j for j in indices if np.absolute(res_info[j][1]-res_info[i][1])==1.]
+#         inter_points[i][neg] = 50
         
-    else:
-        ages = np.asarray(res_info[i][int((len(res_info[i])/2)+1):-1])
-        ages = ages[~np.isnan(ages)]
+#     else:
+#         ages = np.asarray(res_info[i][int((len(res_info[i])/2)+1):-1])
+#         ages = ages[~np.isnan(ages)]
         
-        if (len(np.where(ages>60.))):
-            inter_points[i][i] = 10
+#         if (len(np.where(ages>60.))):
+#             inter_points[i][i] = 10

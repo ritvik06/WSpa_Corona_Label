@@ -1,0 +1,30 @@
+Please input number of houses with positive COVID-19 cases currently : 3
+
+Enter house no's with atleast one positive case:
+
+1. B2-402
+2. A1-501
+3. B4-901
+
+Please input number of servicemen with positive COVID-19 cases currently : 0
+
+ Housemaid Razia Bibi ID: 101651 went to COVID +ve house B2-402 and hence adds 30 points to house A2-1601
+
+ Housemaid Razia Bibi ID: 101651 went to COVID +ve house B2-402 and hence adds 30 points to house A5-1101
+Number of containtment zone houses are 3
+
+Number of Red zone houses are 0
+
+Number of Yellow zone houses are 2
+
+Number of Green zone houses are 322
+
+Enter Your tower : A5
+
+Number of cases in your tower are 0
+
+Enter your house number : 1101
+
+You are in Yellow Zone
+
+Caution : Please do not go out unless absolutely necessary
